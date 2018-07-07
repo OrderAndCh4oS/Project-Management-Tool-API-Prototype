@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AbstractUser, User
 from django.db import models
 
 
@@ -24,6 +25,7 @@ class EmailAddress(models.Model):
 
     def __str__(self):
         return self.email
+
 
 class Client(models.Model):
     fullname = models.CharField(max_length=80)
@@ -77,15 +79,11 @@ class Project(models.Model):
 
 
 class Staff(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    rate = models.FloatField(default=0)
+
     class Meta:
         verbose_name_plural = "staff"
-
-    fullname = models.CharField(max_length=80)
-    hourly_rate = models.FloatField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.fullname
 
 
 class Job(models.Model):
@@ -96,7 +94,7 @@ class Job(models.Model):
     deadline = models.DateTimeField(null=True)
     estimated_time = models.FloatField(default=0)
     logged_time = models.FloatField(default=0)
-    assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True, to_field='user')
     status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
