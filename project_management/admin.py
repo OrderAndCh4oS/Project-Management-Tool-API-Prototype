@@ -1,8 +1,11 @@
 from django.contrib import admin
-
 # Register your models here.
-from project_management.models import Address, EmailAddress, Client, Company, Project, Status, Job, StatusGroup, Staff
+from django.contrib.auth.admin import UserAdmin
 
+from project_management.models import Address, EmailAddress, Client, Company, Project, Status, Job, StatusGroup, Staff, \
+    User
+
+admin.site.register(User, UserAdmin)
 admin.site.register(Address)
 admin.site.register(EmailAddress)
 admin.site.register(Client)

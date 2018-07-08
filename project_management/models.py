@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, User
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
@@ -76,6 +76,11 @@ class Project(models.Model):
 
     def __str__(self):
         return self.reference_code
+
+
+class User(AbstractUser):
+    is_project_manager = models.BooleanField(default=False)
+    is_staff_member = models.BooleanField(default=False)
 
 
 class Staff(models.Model):
