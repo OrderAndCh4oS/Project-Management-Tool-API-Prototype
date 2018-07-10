@@ -1,7 +1,7 @@
-from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from project_management.models import Address, Company, Client, StatusGroup, Staff, Job, Project, EmailAddress, Status
+from project_management.models import Address, Company, Client, StatusGroup, Staff, Job, Project, EmailAddress, Status, \
+    User
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -66,8 +66,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-        'id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active', 'is_staff', 'date_joined')
-        read_only_fields = ('is_active', 'is_staff', 'date_joined')
+            'id', 'username', 'password',
+            'first_name', 'last_name', 'email',
+            'is_active', 'is_project_manager', 'is_account_holder',
+            'date_joined'
+        )
+        read_only_fields = ('date_joined', 'is_account_holder')
         extra_kwargs = {'password': {'write_only': True}}
 
 
@@ -88,14 +92,9 @@ class StaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        user = User(
-            email=user_data['email'],
-            username=user_data['username'],
-            first_name=user_data['first_name'],
-            last_name=user_data['last_name']
-        )
-        user.set_password(user_data['password'])
-        user.is_staff = True
+        password = user_data.pop('password')
+        user = User(**user_data)
+        user.set_password(password)
         user.save()
         staff = Staff.objects.create(user=user, **validated_data)
         return staff
@@ -105,3 +104,25 @@ class StatusGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatusGroup
         fields = '__all__'
+
+
+class CreateUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password')
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            is_account_holder=True,
+            is_project_manager=True,
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+
+        Staff.objects.create(rate=0, user=user)
+
+        return user

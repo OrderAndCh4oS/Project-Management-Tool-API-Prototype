@@ -1,14 +1,14 @@
 from rest_framework import routers
 
-from project_management.views import AddressViewSet, StatusGroupViewSet, StaffViewSet, JobViewSet, ProjectViewSet, \
-    ClientViewSet, CompanyViewSet
+from project_management import views
 
 router = routers.DefaultRouter()
-router.register(r'address', AddressViewSet, base_name='address')
-router.register(r'company', CompanyViewSet)
-router.register(r'client', ClientViewSet, base_name='client')
-router.register(r'project', ProjectViewSet)
-router.register(r'job', JobViewSet)
-router.register(r'staff', StaffViewSet)
-router.register(r'status-group', StatusGroupViewSet)
+router.register(r'register', views.CreateUserViewSet, base_name='register')
+router.register(r'address', views.AddressViewSet, base_name='address')
+router.register(r'company', views.CompanyViewSet)
+router.register(r'client', views.ClientViewSet, base_name='client')
+router.register(r'project', views.ProjectViewSet)
+router.register(r'job', views.JobViewSet)
+router.register(r'staff', views.StaffViewSet)
+router.register(r'status-group', views.StatusGroupViewSet)
 urlpatterns = router.urls

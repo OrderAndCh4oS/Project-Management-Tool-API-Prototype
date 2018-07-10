@@ -120,6 +120,8 @@ REST_FRAMEWORK = {
     )
 }
 
+AUTH_USER_MODEL = 'project_management.User'
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
@@ -133,7 +135,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-AUTH_USER_MODEL = 'project_management.User'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

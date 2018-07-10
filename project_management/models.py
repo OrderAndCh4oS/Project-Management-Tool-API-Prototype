@@ -79,8 +79,14 @@ class Project(models.Model):
 
 
 class User(AbstractUser):
-    is_project_manager = models.BooleanField(default=False)
-    is_staff_member = models.BooleanField(default=False)
+    is_account_holder = models.BooleanField(
+        default=False,
+        help_text=('Should this staff member have account holder permissions'),
+    )
+    is_project_manager = models.BooleanField(
+        default=False,
+        help_text=('Should this staff member have project management permissions'),
+    )
 
 
 class Staff(models.Model):
