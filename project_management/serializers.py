@@ -8,6 +8,7 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = '__all__'
+        read_only_fields = ('account_holder',)
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -24,7 +25,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ('name', 'url', 'clients', 'addresses')
+        fields = ('name', 'url', 'clients', 'addresses', 'account_holder')
+        read_only_fields = ('account_holder',)
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -33,6 +35,14 @@ class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = '__all__'
+        read_only_fields = ('account_holder',)
+
+
+class EmailAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailAddress
+        fields = '__all__'
+        read_only_fields = ('account_holder',)
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -44,6 +54,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         exclude = ('status_group',)
+        read_only_fields = ('account_holder',)
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -60,6 +71,7 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = '__all__'
+        read_only_fields = ('account_holder',)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -81,6 +93,7 @@ class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
         fields = '__all__'
+        read_only_fields = ('account_holder',)
 
     def to_representation(self, obj):
         representation = super().to_representation(obj)
@@ -104,6 +117,7 @@ class StatusGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatusGroup
         fields = '__all__'
+        read_only_fields = ('account_holder',)
 
 
 class CreateUserSerializer(serializers.ModelSerializer):

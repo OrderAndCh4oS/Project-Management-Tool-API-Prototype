@@ -2,6 +2,17 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+class User(AbstractUser):
+    is_account_holder = models.BooleanField(
+        default=False,
+        help_text=('Should this staff member have account holder permissions'),
+    )
+    is_project_manager = models.BooleanField(
+        default=False,
+        help_text=('Should this staff member have project management permissions'),
+    )
+
+
 class Address(models.Model):
     class Meta:
         verbose_name_plural = "Addresses"
@@ -12,6 +23,7 @@ class Address(models.Model):
     county = models.CharField(max_length=120, null=True)
     country = models.CharField(max_length=120, null=True)
     post_code = models.CharField(max_length=10)
+    account_holder = models.ForeignKey(User, related_name='addresses', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.address_first_line
@@ -22,6 +34,7 @@ class EmailAddress(models.Model):
         verbose_name_plural = "Email Addresses"
 
     email = models.EmailField(max_length=255)
+    account_holder = models.ForeignKey(User, related_name='email_addresses', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.email
@@ -31,6 +44,7 @@ class Client(models.Model):
     fullname = models.CharField(max_length=80)
     email_address = models.ForeignKey(EmailAddress, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    account_holder = models.ForeignKey(User, related_name='clients', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.fullname
@@ -45,6 +59,7 @@ class Company(models.Model):
     clients = models.ManyToManyField(Client, related_name="companies")
     url = models.CharField(max_length=120)
     created_at = models.DateTimeField(auto_now_add=True)
+    account_holder = models.ForeignKey(User, related_name='companies', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -52,6 +67,7 @@ class Company(models.Model):
 
 class StatusGroup(models.Model):
     title = models.CharField(max_length=30)
+    account_holder = models.ForeignKey(User, related_name='status_groups', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -63,6 +79,7 @@ class Status(models.Model):
 
     title = models.CharField(max_length=30)
     status_group = models.ForeignKey(StatusGroup, on_delete=models.CASCADE)
+    account_holder = models.ForeignKey(User, related_name='statuses', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -73,25 +90,16 @@ class Project(models.Model):
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
     status_group = models.ForeignKey(StatusGroup, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    account_holder = models.ForeignKey(User, related_name='projects', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.reference_code
 
 
-class User(AbstractUser):
-    is_account_holder = models.BooleanField(
-        default=False,
-        help_text=('Should this staff member have account holder permissions'),
-    )
-    is_project_manager = models.BooleanField(
-        default=False,
-        help_text=('Should this staff member have project management permissions'),
-    )
-
-
 class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     rate = models.FloatField(default=0)
+    account_holder = models.ForeignKey(User, related_name='my_staff', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = "staff"
@@ -108,6 +116,7 @@ class Job(models.Model):
     assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True, to_field='user')
     status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    account_holder = models.ForeignKey(User, related_name='jobs', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
