@@ -67,8 +67,8 @@ class JobViewSet(BaseModelViewSet):
     filter_backends = (filters.SearchFilter, DjangoFilterBackend)
     search_fields = ('reference_code', 'title', 'description')
     filter_fields = (
-        'project__reference_code', 'assigned_to__username',
-        'assigned_to__first_name', 'assigned_to__last_name',
+        'project__reference_code', 'assigned_to__user__username',
+        'assigned_to__user__first_name', 'assigned_to__user__last_name',
         'status__title'
     )
 
