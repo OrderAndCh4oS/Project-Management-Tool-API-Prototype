@@ -1,70 +1,68 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, filters
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
 from project_management import models
 from project_management import permissions
 from project_management import serializers
-from project_management.models import Staff
+from project_management.filters import hasObjectAuthorityFilterBackend
+from project_management.models import Authority
 
 
-class BaseModelViewSet(viewsets.ModelViewSet):
+class WithAuthorityBaseViewSet(viewsets.ModelViewSet):
+
     def perform_create(self, serializer):
-        if self.request.user.is_account_holder:
-            serializer.save(account_holder=self.request.user)
-        else:
-            staff = Staff.objects.filter(user=self.request.user)
-            serializer.save(account_holder=staff.account_holder)
+        authority = Authority.objects.get(uuid=self.request.session.get('authority'))
+        serializer.save(authority=authority)
 
 
-class AddressViewSet(BaseModelViewSet):
+class AddressViewSet(WithAuthorityBaseViewSet):
     queryset = models.Address.objects.all()
     serializer_class = serializers.AddressSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    permission_classes = (IsAuthenticated, permissions.IsProjectManagerOrIsStaffReadOnly)
+    filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
-class CompanyViewSet(BaseModelViewSet):
+class CompanyViewSet(WithAuthorityBaseViewSet):
     queryset = models.Company.objects.all()
     serializer_class = serializers.CompanySerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend)
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('name', 'clients__fullname')
     filter_fields = ('clients__fullname',)
 
-    def perform_create(self, serializer):
-        self.assign_account_holder(serializer)
 
-
-class ClientViewSet(BaseModelViewSet):
+class ClientViewSet(WithAuthorityBaseViewSet):
     queryset = models.Client.objects.all()
     serializer_class = serializers.ClientSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend)
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('fullname', 'companies__name', 'email_addresses__email')
     filter_fields = ('companies__name',)
 
 
-class EmailAddressViewSet(BaseModelViewSet):
+class EmailAddressViewSet(WithAuthorityBaseViewSet):
     queryset = models.EmailAddress.objects.all()
     serializer_class = serializers.EmailAddressSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
-class ProjectViewSet(BaseModelViewSet):
+class ProjectViewSet(WithAuthorityBaseViewSet):
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend)
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('reference_code', 'company__name')
     filter_fields = ('company__name',)
 
 
-class JobViewSet(BaseModelViewSet):
+class JobViewSet(WithAuthorityBaseViewSet):
     queryset = models.Job.objects.all()
     serializer_class = serializers.JobSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend)
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('reference_code', 'title', 'description')
     filter_fields = (
         'project__reference_code', 'assigned_to__user__username',
@@ -73,18 +71,19 @@ class JobViewSet(BaseModelViewSet):
     )
 
 
-class StaffViewSet(BaseModelViewSet):
+class StaffViewSet(WithAuthorityBaseViewSet):
     queryset = models.Staff.objects.all()
     serializer_class = serializers.StaffSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (filters.SearchFilter, hasObjectAuthorityFilterBackend)
     search_fields = ('user',)
 
 
-class StatusGroupViewSet(BaseModelViewSet):
+class StatusGroupViewSet(WithAuthorityBaseViewSet):
     queryset = models.StatusGroup.objects.all()
     serializer_class = serializers.StatusGroupSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
 class CreateUserViewSet(mixins.CreateModelMixin, GenericViewSet):

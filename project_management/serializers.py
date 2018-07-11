@@ -1,14 +1,15 @@
+from datetime import timedelta, date
+
 from rest_framework import serializers
 
-from project_management.models import Address, Company, Client, StatusGroup, Staff, Job, Project, EmailAddress, Status, \
-    User
+from project_management.models import Staff, StatusGroup, Job, Status, Project, Company, EmailAddress, Address, Client, \
+    User, Authority
 
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = '__all__'
-        read_only_fields = ('account_holder',)
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -25,8 +26,7 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ('name', 'url', 'clients', 'addresses', 'account_holder')
-        read_only_fields = ('account_holder',)
+        fields = ('name', 'url', 'clients', 'addresses')
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -35,14 +35,12 @@ class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = '__all__'
-        read_only_fields = ('account_holder',)
 
 
 class EmailAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailAddress
         fields = '__all__'
-        read_only_fields = ('account_holder',)
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -54,7 +52,6 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         exclude = ('status_group',)
-        read_only_fields = ('account_holder',)
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -71,7 +68,6 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = '__all__'
-        read_only_fields = ('account_holder',)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -80,10 +76,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'username', 'password',
             'first_name', 'last_name', 'email',
-            'is_active', 'is_project_manager', 'is_account_holder',
+            'is_active', 'is_project_manager',
             'date_joined'
         )
-        read_only_fields = ('date_joined', 'is_account_holder')
+        read_only_fields = ('date_joined',)
         extra_kwargs = {'password': {'write_only': True}}
 
 
@@ -93,7 +89,6 @@ class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
         fields = '__all__'
-        read_only_fields = ('account_holder',)
 
     def to_representation(self, obj):
         representation = super().to_representation(obj)
@@ -117,7 +112,6 @@ class StatusGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatusGroup
         fields = '__all__'
-        read_only_fields = ('account_holder',)
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -131,12 +125,13 @@ class CreateUserSerializer(serializers.ModelSerializer):
         user = User.objects.create(
             username=validated_data['username'],
             email=validated_data['email'],
-            is_account_holder=True,
             is_project_manager=True,
         )
         user.set_password(validated_data['password'])
         user.save()
+        expiry = date.today() + timedelta(days=365)
+        authority = Authority.objects.create(expires_at=expiry, is_active=True)
 
-        Staff.objects.create(rate=0, user=user)
+        Staff.objects.create(rate=0, user=user, authority=authority)
 
         return user

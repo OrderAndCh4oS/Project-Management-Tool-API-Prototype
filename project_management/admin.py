@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from project_management import models
 
+admin.site.register(models.User)
 admin.site.register(models.Address)
 admin.site.register(models.EmailAddress)
 admin.site.register(models.Client)

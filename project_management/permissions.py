@@ -1,47 +1,38 @@
 from rest_framework import permissions
 
-from project_management.models import Staff
-
-
-class IsAccountHolder(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        if request.user and request.user.is_superuser:
-            return True
-        try:
-            return request.user and request.user.is_account_holder and request.user == obj.account_holder
-        except:
-            return False
+from project_management.authority import has_access
 
 
 class IsProjectManager(permissions.BasePermission):
 
-    def has_object_permission(self, request, view, obj):
+    def has_permission(self, request, view):
         if request.user and request.user.is_superuser:
             return True
         try:
-            staff = Staff.objects.get(user=request.user)
-            return (
-                    staff and staff.user.is_project_manager and
-                    obj.account_holder == staff.account_holder
-            )
+            return request.user and request.user.is_project_manager
         except:
             return False
+
+    def has_object_permission(self, request, view, obj):
+        return has_access(request, obj) and request.user.is_project_manager
 
 
 class IsProjectManagerOrIsStaffReadOnly(permissions.BasePermission):
 
-    def has_object_permission(self, request, view, obj):
+    def has_permission(self, request, view):
         if request.user and request.user.is_superuser:
             return True
         try:
-            staff = Staff.objects.get(user=request.user)
             return (
-                    (staff.user and staff.user.is_project_manager or
-                     request.method in permissions.SAFE_METHODS and
-                     staff.user and staff.user.is_authenticated)
-                    and (obj.account_holder == staff.account_holder)
+                    request.user and request.user.is_project_manager or
+                    request.method in permissions.SAFE_METHODS and
+                    request.user and request.user.is_authenticated
             )
-
         except:
             return False
+
+    def has_object_permission(self, request, view, obj):
+        return (
+                has_access(request, obj) and request.user.is_project_manager or
+                has_access(request, obj) and request.method in permissions.SAFE_METHODS
+        )
