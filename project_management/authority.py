@@ -1,3 +1,6 @@
+from rest_framework import serializers
+
+
 def get_the_authority(user):
     try:
         return user.staff.authority.get_uuid()
@@ -10,3 +13,11 @@ def has_access(request, object):
         return request.session.get('authority') == object.authority.get_uuid()
     except:
         return False
+
+
+def hyperlinkedRelatedFieldByAuthority(model, view_name, authority):
+    return serializers.HyperlinkedRelatedField(
+        many=True,
+        view_name=view_name,
+        queryset=model.objects.filter(authority=authority)
+    )

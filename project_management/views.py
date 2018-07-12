@@ -1,6 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, filters
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import GenericViewSet
 
 from project_management import models
@@ -11,7 +11,6 @@ from project_management.models import Authority
 
 
 class WithAuthorityBaseViewSet(viewsets.ModelViewSet):
-
     def perform_create(self, serializer):
         authority = Authority.objects.get(uuid=self.request.session.get('authority'))
         serializer.save(authority=authority)
@@ -20,7 +19,8 @@ class WithAuthorityBaseViewSet(viewsets.ModelViewSet):
 class AddressViewSet(WithAuthorityBaseViewSet):
     queryset = models.Address.objects.all()
     serializer_class = serializers.AddressSerializer
-    permission_classes = (IsAuthenticated, permissions.IsProjectManagerOrIsStaffReadOnly)
+    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 

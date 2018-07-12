@@ -11,12 +11,16 @@ class User(AbstractUser):
     )
 
 
+# ToDo: Workout how to serialize objects correctly
 class Authority(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     expires_at = models.DateField()
     is_active = models.BooleanField()
 
     def get_uuid(self):
+        return self.uuid.__str__()
+
+    def __str__(self):
         return self.uuid.__str__()
 
 
@@ -33,7 +37,7 @@ class Address(models.Model):
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
 
     def __str__(self):
-        return self.address_first_line
+        return self.authority.get_uuid()
 
 
 class EmailAddress(models.Model):
@@ -41,6 +45,7 @@ class EmailAddress(models.Model):
         verbose_name_plural = "Email Addresses"
 
     email = models.EmailField(max_length=255)
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
 
     def __str__(self):
         return self.email
@@ -73,6 +78,7 @@ class Company(models.Model):
 
 class StatusGroup(models.Model):
     title = models.CharField(max_length=30)
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
 
     def __str__(self):
         return self.title
@@ -108,6 +114,9 @@ class Staff(models.Model):
 
     class Meta:
         verbose_name_plural = "staff"
+
+    def __str__(self):
+        return self.user.username
 
 
 class Job(models.Model):

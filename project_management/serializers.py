@@ -2,6 +2,7 @@ from datetime import timedelta, date
 
 from rest_framework import serializers
 
+from project_management.authority import hyperlinkedRelatedFieldByAuthority
 from project_management.models import Staff, StatusGroup, Job, Status, Project, Company, EmailAddress, Address, Client, \
     User, Authority
 
@@ -10,64 +11,82 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = '__all__'
+        read_only_fields = ('authority',)
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    clients = serializers.HyperlinkedRelatedField(
-        many=True,
-        view_name='client-detail',
-        queryset=Client.objects.all()
-    )
-    addresses = serializers.HyperlinkedRelatedField(
-        many=True,
-        view_name='address-detail',
-        queryset=Address.objects.all()
-    )
-
     class Meta:
         model = Company
         fields = ('name', 'url', 'clients', 'addresses')
+        read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = self.context['request'].session.get('authority')
+        fields['clients'] = hyperlinkedRelatedFieldByAuthority(Client, 'client-detail', authority)
+        fields['addresses'] = hyperlinkedRelatedFieldByAuthority(Address, 'address-detail', authority)
+
+        return fields
 
 
 class ClientSerializer(serializers.ModelSerializer):
-    email_address = serializers.SlugRelatedField(slug_field='email', queryset=EmailAddress.objects.all())
-
     class Meta:
         model = Client
         fields = '__all__'
+        read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = self.context['request'].session.get('authority')
+        fields['email_address'] = serializers.SlugRelatedField(
+            slug_field='email',
+            queryset=EmailAddress.objects.filter(authority=authority)
+        )
+
+        return fields
 
 
 class EmailAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailAddress
         fields = '__all__'
+        read_only_fields = ('authority',)
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    company = serializers.HyperlinkedRelatedField(
-        view_name='company-detail',
-        queryset=Company.objects.all()
-    )
-
     class Meta:
         model = Project
         exclude = ('status_group',)
+        read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = self.context['request'].session.get('authority')
+        fields['company'] = hyperlinkedRelatedFieldByAuthority(Company, 'company-detail', authority)
+
+        return fields
 
 
 class JobSerializer(serializers.ModelSerializer):
-    project = serializers.HyperlinkedRelatedField(
-        view_name='project-detail',
-        queryset=Project.objects.all()
-    )
-    assigned_to = serializers.HyperlinkedRelatedField(
-        view_name='staff-detail',
-        queryset=Staff.objects.all()
-    )
-    status = serializers.SlugRelatedField(slug_field='title', queryset=Status.objects.all())
-
     class Meta:
         model = Job
         fields = '__all__'
+        read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = self.context['request'].session.get('authority')
+        fields['project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority)
+        fields['assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority)
+        fields['status'] = serializers.SlugRelatedField(
+            slug_field='title',
+            queryset=Status.objects.filter(authority=authority)
+        )
+        return fields
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -89,6 +108,7 @@ class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
         fields = '__all__'
+        read_only_fields = ('authority',)
 
     def to_representation(self, obj):
         representation = super().to_representation(obj)
@@ -112,6 +132,7 @@ class StatusGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatusGroup
         fields = '__all__'
+        read_only_fields = ('authority',)
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
