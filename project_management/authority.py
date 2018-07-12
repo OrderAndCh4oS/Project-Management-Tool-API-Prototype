@@ -15,9 +15,9 @@ def has_access(request, object):
         return False
 
 
-def hyperlinkedRelatedFieldByAuthority(model, view_name, authority):
+def hyperlinkedRelatedFieldByAuthority(model, view_name, authority, many=True):
     return serializers.HyperlinkedRelatedField(
-        many=True,
+        many=many,
         view_name=view_name,
         queryset=model.objects.filter(authority=authority)
     )

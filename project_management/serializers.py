@@ -65,7 +65,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
 
         authority = self.context['request'].session.get('authority')
-        fields['company'] = hyperlinkedRelatedFieldByAuthority(Company, 'company-detail', authority)
+        fields['company'] = hyperlinkedRelatedFieldByAuthority(Company, 'company-detail', authority, False)
 
         return fields
 
@@ -80,8 +80,8 @@ class JobSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
 
         authority = self.context['request'].session.get('authority')
-        fields['project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority)
-        fields['assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority)
+        fields['project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
+        fields['assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
         fields['status'] = serializers.SlugRelatedField(
             slug_field='title',
             queryset=Status.objects.filter(authority=authority)
@@ -131,6 +131,13 @@ class StaffSerializer(serializers.ModelSerializer):
 class StatusGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatusGroup
+        fields = '__all__'
+        read_only_fields = ('authority',)
+
+
+class StatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Status
         fields = '__all__'
         read_only_fields = ('authority',)
 

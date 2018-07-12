@@ -86,6 +86,13 @@ class StatusGroupViewSet(WithAuthorityBaseViewSet):
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
+class StatusViewSet(WithAuthorityBaseViewSet):
+    queryset = models.Status.objects.all()
+    serializer_class = serializers.StatusSerializer
+    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    filter_backends = (hasObjectAuthorityFilterBackend,)
+
+
 class CreateUserViewSet(mixins.CreateModelMixin, GenericViewSet):
     model = models.User
     permission_classes = (AllowAny,)
