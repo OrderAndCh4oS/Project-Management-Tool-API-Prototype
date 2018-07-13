@@ -21,3 +21,10 @@ def hyperlinkedRelatedFieldByAuthority(model, view_name, authority, many=True):
         view_name=view_name,
         queryset=model.objects.filter(authority=authority)
     )
+
+
+def slugRelatedFieldByAuthority(model, slug, authority):
+    return serializers.SlugRelatedField(
+        slug_field=slug,
+        queryset=model.objects.filter(authority=authority)
+    )

@@ -63,11 +63,27 @@ class JobViewSet(WithAuthorityBaseViewSet):
     serializer_class = serializers.JobSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
-    search_fields = ('reference_code', 'title', 'description')
+    search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
     filter_fields = (
-        'project__reference_code', 'assigned_to__user__username',
-        'assigned_to__user__first_name', 'assigned_to__user__last_name',
-        'status__title'
+        'todo__project__reference_code', 'todo__assigned_to__user__username',
+        'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
+        'todo__status__title'
+    )
+
+
+class TaskViewSet(WithAuthorityBaseViewSet):
+    queryset = models.Task.objects.all()
+    serializer_class = serializers.TaskSerializer
+    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
+    search_fields = (
+        'todo__reference_code', 'todo__title', 'todo__description',
+        'job__todo__reference_code', 'job__todo__title', 'job__todo__description'
+    )
+    filter_fields = (
+        'todo__project__reference_code', 'todo__assigned_to__user__username',
+        'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
+        'todo__status__title'
     )
 
 
@@ -84,6 +100,28 @@ class StatusGroupViewSet(WithAuthorityBaseViewSet):
     serializer_class = serializers.StatusGroupSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
+
+
+# Todo: filter by times gte lte
+class WorkDayViewSet(WithAuthorityBaseViewSet):
+    queryset = models.WorkDay.objects.all()
+    serializer_class = serializers.WorkDaySerializer
+    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    filter_backends = (hasObjectAuthorityFilterBackend,)
+
+
+# Todo: filter by times gte lte
+class ScheduledTodoViewSet(WithAuthorityBaseViewSet):
+    queryset = models.ScheduledTodo.objects.all()
+    serializer_class = serializers.ScheduledTodoSerializer
+    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+    filter_backends = (hasObjectAuthorityFilterBackend,)
+    filter_fields = (
+        'work_day',
+        'todo__project__reference_code', 'todo__assigned_to__user__username',
+        'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
+        'todo__status__title'
+    )
 
 
 class StatusViewSet(WithAuthorityBaseViewSet):

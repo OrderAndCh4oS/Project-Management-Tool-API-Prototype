@@ -13,4 +13,7 @@ router.register(r'status-group', views.StatusGroupViewSet)
 router.register(r'status', views.StatusViewSet)
 router.register(r'project', views.ProjectViewSet)
 router.register(r'job', views.JobViewSet)
+router.register(r'task', views.TaskViewSet)
+router.register(r'work-day', views.WorkDayViewSet)
+router.register(r'scheduled-todo', views.ScheduledTodoViewSet)
 urlpatterns = router.urls

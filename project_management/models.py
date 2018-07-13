@@ -7,11 +7,10 @@ from django.db import models
 class User(AbstractUser):
     is_project_manager = models.BooleanField(
         default=False,
-        help_text=('Should this staff member have project management permissions'),
+        help_text='Should this staff member have project management permissions',
     )
 
 
-# ToDo: Workout how to serialize objects correctly
 class Authority(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     expires_at = models.DateField()
@@ -109,8 +108,8 @@ class Project(models.Model):
 
 class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, blank=True)
     rate = models.FloatField(default=0)
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "staff"
@@ -119,18 +118,57 @@ class Staff(models.Model):
         return self.user.username
 
 
-class Job(models.Model):
+class Todo(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     reference_code = models.CharField(max_length=20)
     title = models.CharField(max_length=140)
     description = models.CharField(max_length=255)
-    deadline = models.DateTimeField(null=True)
     estimated_time = models.FloatField(default=0)
     logged_time = models.FloatField(default=0)
     assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True, to_field='user')
-    status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    deadline = models.DateTimeField(null=True)
+    status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, blank=True)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
-        return self.title
+        return "%s: %s" % (self.reference_code, self.title)
+
+
+class Job(models.Model):
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
+
+    def __str__(self):
+        return self.todo
+
+
+class Task(models.Model):
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
+
+    def __str__(self):
+        return self.todo
+
+
+class WorkDay(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    repeat = models.BooleanField()
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
+
+    def __str__(self):
+        return "%s: %s - %s" % (self.staff, self.start_time, self.end_time)
+
+
+class ScheduledTodo(models.Model):
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
+    work_day = models.ForeignKey(WorkDay, on_delete=models.CASCADE)
+    time = models.FloatField()
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
+
+    def __str__(self):
+        return "%s: %s " % (self.todo.title, self.todo.status)
