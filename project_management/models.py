@@ -137,7 +137,7 @@ class Todo(models.Model):
 
 
 class Job(models.Model):
-    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, related_name='job')
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
@@ -145,7 +145,7 @@ class Job(models.Model):
 
 
 class Task(models.Model):
-    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, related_name='task')
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 

@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority
 from project_management.models import Staff, StatusGroup, Job, Status, Project, Company, EmailAddress, Address, Client, \
-    User, Authority, ScheduledTodo, WorkDay
+    User, Authority, ScheduledTodo, WorkDay, Todo
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -67,36 +67,52 @@ class ProjectSerializer(serializers.ModelSerializer):
         return fields
 
 
+class TodoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Todo
+        fields = '__all__'
+        read_only_fields = ('authority',)
+
+
 class JobSerializer(serializers.ModelSerializer):
+    todo = TodoSerializer()
+
     class Meta:
         model = Job
         fields = '__all__'
         read_only_fields = ('authority',)
 
-    def get_fields(self):
-        fields = super().get_fields()
+    def to_representation(self, obj):
+        representation = super().to_representation(obj)
+        todo_representation = representation.pop('todo')
+        for key in todo_representation:
+            representation[key] = todo_representation[key]
 
-        authority = self.context['request'].session.get('authority')
-        fields['todo__project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
-        fields['todo__assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
-        fields['todo__status'] = slugRelatedFieldByAuthority(Status, 'title', authority)
-        return fields
+        return representation
+
+    def create(self, validated_data):
+        todo_data = validated_data.pop('todo')
+        todo = Todo(**todo_data)
+        todo.save()
+        job = Job.objects.create(todo=todo, **validated_data)
+        return job
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    todo = TodoSerializer()
+
     class Meta:
         model = Job
         fields = '__all__'
         read_only_fields = ('authority',)
 
-    def get_fields(self):
-        fields = super().get_fields()
+    def to_representation(self, obj):
+        representation = super().to_representation(obj)
+        todo_representation = representation.pop('todo')
+        for key in todo_representation:
+            representation[key] = todo_representation[key]
 
-        authority = self.context['request'].session.get('authority')
-        fields['todo__project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
-        fields['todo__assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
-        fields['todo__status'] = slugRelatedFieldByAuthority(Status, 'title', authority)
-        return fields
+        return representation
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -151,12 +167,28 @@ class WorkDaySerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('authority',)
 
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = self.context['request'].session.get('authority')
+        fields['staff'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
+        return fields
+
 
 class ScheduledTodoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScheduledTodo
         fields = '__all__'
         read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = self.context['request'].session.get('authority')
+        fields['work_day'] = hyperlinkedRelatedFieldByAuthority(WorkDay, 'workday-detail', authority, False)
+        fields['todo__assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
+        fields['todo__project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
+        return fields
 
 
 class StatusSerializer(serializers.ModelSerializer):
