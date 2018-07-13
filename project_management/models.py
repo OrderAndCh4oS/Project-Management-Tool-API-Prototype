@@ -137,7 +137,7 @@ class Todo(models.Model):
 
 
 class Job(models.Model):
-    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, related_name='job')
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
@@ -145,7 +145,7 @@ class Job(models.Model):
 
 
 class Task(models.Model):
-    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
+    todo = models.OneToOneField(Todo, on_delete=models.CASCADE, related_name='task')
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
@@ -155,13 +155,13 @@ class Task(models.Model):
 
 class WorkDay(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    repeat = models.BooleanField()
+    date = models.DateField()
+    hours = models.FloatField()
+    repeat = models.IntegerField(default=-1)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
-        return "%s: %s - %s" % (self.staff, self.start_time, self.end_time)
+        return "%s: %s, %sh" % (self.staff, self.date, self.hours)
 
 
 class ScheduledTodo(models.Model):
