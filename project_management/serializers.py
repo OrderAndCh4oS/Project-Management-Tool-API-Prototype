@@ -2,7 +2,7 @@ from datetime import timedelta, date
 
 from rest_framework import serializers
 
-from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority
+from project_management.authority import hyperlinkedRelatedFieldByAuthority
 from project_management.models import Staff, StatusGroup, Job, Status, Project, Company, EmailAddress, Address, Client, \
     User, Authority, ScheduledTodo, WorkDay, Todo
 
@@ -40,7 +40,7 @@ class ClientSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
 
         authority = self.context['request'].session.get('authority')
-        fields['email_address'] = slugRelatedFieldByAuthority(EmailAddress, 'email', authority)
+        fields['email_addresses'] = hyperlinkedRelatedFieldByAuthority(EmailAddress, 'emailaddress-detail', authority)
 
         return fields
 

@@ -39,25 +39,25 @@ class Address(models.Model):
         return self.authority.get_uuid()
 
 
-class EmailAddress(models.Model):
-    class Meta:
-        verbose_name_plural = "Email Addresses"
-
-    email = models.EmailField(max_length=255)
-    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
-
-    def __str__(self):
-        return self.email
-
-
 class Client(models.Model):
     fullname = models.CharField(max_length=80)
-    email_address = models.ForeignKey(EmailAddress, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return self.fullname
+
+
+class EmailAddress(models.Model):
+    class Meta:
+        verbose_name_plural = "Email Addresses"
+
+    email = models.EmailField(max_length=255)
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, related_name='email_addresses', blank=True, null=True)
+    authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
+
+    def __str__(self):
+        return self.email
 
 
 class Company(models.Model):
