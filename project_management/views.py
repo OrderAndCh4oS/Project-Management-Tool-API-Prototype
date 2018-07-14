@@ -75,15 +75,15 @@ class TaskViewSet(WithAuthorityBaseViewSet):
     serializer_class = serializers.TaskSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
-    search_fields = (
-        'todo__reference_code', 'todo__title', 'todo__description',
-        'job__todo__reference_code', 'job__todo__title', 'job__todo__description'
-    )
-    filter_fields = (
-        'todo__project__reference_code', 'todo__assigned_to__user__username',
-        'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
-        'todo__status__title'
-    )
+    # search_fields = (
+    #     'todo__reference_code', 'todo__title', 'todo__description',
+    #     'job__todo__reference_code', 'job__todo__title', 'job__todo__description'
+    # )
+    # filter_fields = (
+    #     'todo__project__reference_code', 'todo__assigned_to__user__username',
+    #     'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
+    #     'todo__status__title'
+    # )
 
 
 class StaffViewSet(WithAuthorityBaseViewSet):

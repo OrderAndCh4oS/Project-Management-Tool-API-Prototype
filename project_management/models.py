@@ -120,7 +120,6 @@ class Staff(models.Model):
 
 class Todo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     reference_code = models.CharField(max_length=20)
     title = models.CharField(max_length=140)
     description = models.CharField(max_length=255)
@@ -138,10 +137,11 @@ class Todo(models.Model):
 
 class Job(models.Model):
     todo = models.OneToOneField(Todo, on_delete=models.CASCADE, primary_key=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
-        return self.todo
+        return str(self.todo)
 
 
 class Task(models.Model):
@@ -150,7 +150,7 @@ class Task(models.Model):
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
-        return self.todo
+        return str(self.todo)
 
 
 class WorkDay(models.Model):

@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority
 from project_management.models import Staff, StatusGroup, Job, Status, Project, Company, EmailAddress, Address, Client, \
-    User, Authority, ScheduledTodo, WorkDay, Todo
+    User, Authority, ScheduledTodo, WorkDay, Todo, Task
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -92,7 +92,10 @@ class JobSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         todo_data = validated_data.pop('todo')
+        authority = Authority.objects.get(uuid=self.context['request'].session.get('authority'))
+
         todo = Todo(**todo_data)
+        todo.authority = authority
         todo.save()
         job = Job.objects.create(todo=todo, **validated_data)
         return job
@@ -102,7 +105,7 @@ class TaskSerializer(serializers.ModelSerializer):
     todo = TodoSerializer()
 
     class Meta:
-        model = Job
+        model = Task
         fields = '__all__'
         read_only_fields = ('authority',)
 
@@ -113,6 +116,17 @@ class TaskSerializer(serializers.ModelSerializer):
             representation[key] = todo_representation[key]
 
         return representation
+
+    def create(self, validated_data):
+        todo_data = validated_data.pop('todo')
+        authority = Authority.objects.get(uuid=self.context['request'].session.get('authority'))
+
+        todo = Todo(**todo_data)
+        todo.authority = authority
+        todo.save()
+        task = Task.objects.create(todo=todo, **validated_data)
+
+        return task
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -186,8 +200,6 @@ class ScheduledTodoSerializer(serializers.ModelSerializer):
 
         authority = self.context['request'].session.get('authority')
         fields['work_day'] = hyperlinkedRelatedFieldByAuthority(WorkDay, 'workday-detail', authority, False)
-        fields['todo__assigned_to'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
-        fields['todo__project'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
         return fields
 
 
