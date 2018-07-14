@@ -20,7 +20,6 @@ class AddressViewSet(WithAuthorityBaseViewSet):
     queryset = models.Address.objects.all()
     serializer_class = serializers.AddressSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
-
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
