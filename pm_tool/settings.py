@@ -49,9 +49,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    'project_management.middleware.UserAuthorities'
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
 CORS_ORIGIN_WHITELIST = (
@@ -79,6 +77,8 @@ TEMPLATES = [
         },
     },
 ]
+
+DRF_EXPANDER_EXPAND_ARG = 'with'
 
 WSGI_APPLICATION = 'pm_tool.wsgi.application'
 

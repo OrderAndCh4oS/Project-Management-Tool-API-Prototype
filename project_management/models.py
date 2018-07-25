@@ -36,7 +36,7 @@ class Address(models.Model):
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
 
     def __str__(self):
-        return self.authority.get_uuid()
+        return self.address_first_line
 
 
 class Client(models.Model):

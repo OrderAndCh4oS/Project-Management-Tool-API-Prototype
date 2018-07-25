@@ -6,13 +6,14 @@ from rest_framework.viewsets import GenericViewSet
 from project_management import models
 from project_management import permissions
 from project_management import serializers
+from project_management.authority import get_the_authority
 from project_management.filters import hasObjectAuthorityFilterBackend
 from project_management.models import Authority
 
 
 class WithAuthorityBaseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
-        authority = Authority.objects.get(uuid=self.request.session.get('authority'))
+        authority = Authority.objects.get(uuid=get_the_authority(self.request.user))
         serializer.save(authority=authority)
 
 
@@ -64,7 +65,7 @@ class JobViewSet(WithAuthorityBaseViewSet):
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
     filter_fields = (
-        'todo__project__reference_code', 'todo__assigned_to__user__username',
+        'todo__assigned_to__user__username',
         'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
         'todo__status__title'
     )

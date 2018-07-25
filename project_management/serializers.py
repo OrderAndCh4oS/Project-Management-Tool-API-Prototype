@@ -1,36 +1,26 @@
 from datetime import timedelta, date
 
+from expander import ExpanderSerializerMixin
 from rest_framework import serializers
 
-from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority
+from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority, \
+    get_the_authority
 from project_management.models import Staff, StatusGroup, Job, Status, Project, Company, EmailAddress, Address, Client, \
     User, Authority, ScheduledTodo, WorkDay, Todo, Task
 
 
-class AddressSerializer(serializers.ModelSerializer):
+class BaseSerializer(ExpanderSerializerMixin, serializers.ModelSerializer):
+    pass
+
+
+class AddressSerializer(BaseSerializer):
     class Meta:
         model = Address
         fields = '__all__'
         read_only_fields = ('authority',)
 
 
-class CompanySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Company
-        fields = ('name', 'url', 'clients', 'addresses')
-        read_only_fields = ('authority',)
-
-    def get_fields(self):
-        fields = super().get_fields()
-
-        authority = self.context['request'].session.get('authority')
-        fields['clients'] = hyperlinkedRelatedFieldByAuthority(Client, 'client-detail', authority)
-        fields['addresses'] = hyperlinkedRelatedFieldByAuthority(Address, 'address-detail', authority)
-
-        return fields
-
-
-class ClientSerializer(serializers.ModelSerializer):
+class ClientSerializer(BaseSerializer):
     class Meta:
         model = Client
         fields = '__all__'
@@ -39,48 +29,75 @@ class ClientSerializer(serializers.ModelSerializer):
     def get_fields(self):
         fields = super().get_fields()
 
-        authority = self.context['request'].session.get('authority')
+        authority = get_the_authority(self.context['request'].user)
         fields['email_addresses'] = slugRelatedFieldByAuthority(EmailAddress, 'email', authority, True)
 
         return fields
 
 
-class EmailAddressSerializer(serializers.ModelSerializer):
+class CompanySerializer(BaseSerializer):
+    class Meta:
+        model = Company
+        fields = ('name', 'url', 'clients', 'addresses')
+        read_only_fields = ('authority',)
+        expandable_fields = {
+            'clients': (ClientSerializer, (), {'many': True}),
+            'addresses': (AddressSerializer, (), {'many': True})
+        }
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = get_the_authority(self.context['request'].user)
+        fields['clients'] = hyperlinkedRelatedFieldByAuthority(Client, 'client-detail', authority)
+        fields['addresses'] = hyperlinkedRelatedFieldByAuthority(Address, 'address-detail', authority)
+
+        return fields
+
+
+class EmailAddressSerializer(BaseSerializer):
     class Meta:
         model = EmailAddress
         fields = '__all__'
         read_only_fields = ('authority',)
 
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         exclude = ('status_group',)
         read_only_fields = ('authority',)
+        expandable_fields = {
+            'company': CompanySerializer,
+        }
 
     def get_fields(self):
         fields = super().get_fields()
 
-        authority = self.context['request'].session.get('authority')
+        authority = get_the_authority(self.context['request'].user)
         fields['company'] = hyperlinkedRelatedFieldByAuthority(Company, 'company-detail', authority, False)
 
         return fields
 
 
-class TodoSerializer(serializers.ModelSerializer):
+class TodoSerializer(BaseSerializer):
     class Meta:
         model = Todo
         fields = '__all__'
         read_only_fields = ('authority',)
 
 
-class JobSerializer(serializers.ModelSerializer):
+class JobSerializer(BaseSerializer):
     todo = TodoSerializer()
+
 
     class Meta:
         model = Job
         fields = '__all__'
         read_only_fields = ('authority',)
+        expandable_fields = {
+            'project': ProjectSerializer,
+        }
 
     def to_representation(self, obj):
         representation = super().to_representation(obj)
@@ -92,7 +109,7 @@ class JobSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         todo_data = validated_data.pop('todo')
-        authority = Authority.objects.get(uuid=self.context['request'].session.get('authority'))
+        authority = Authority.objects.get(uuid=get_the_authority(self.context['request'].user))
 
         todo = Todo(**todo_data)
         todo.authority = authority
@@ -101,13 +118,16 @@ class JobSerializer(serializers.ModelSerializer):
         return job
 
 
-class TaskSerializer(serializers.ModelSerializer):
+class TaskSerializer(BaseSerializer):
     todo = TodoSerializer()
 
     class Meta:
         model = Task
         fields = '__all__'
         read_only_fields = ('authority',)
+        expandable_fields = {
+            'job': JobSerializer,
+        }
 
     def to_representation(self, obj):
         representation = super().to_representation(obj)
@@ -119,7 +139,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         todo_data = validated_data.pop('todo')
-        authority = Authority.objects.get(uuid=self.context['request'].session.get('authority'))
+        authority = Authority.objects.get(uuid=get_the_authority(self.context['request'].user))
 
         todo = Todo(**todo_data)
         todo.authority = authority
@@ -129,7 +149,7 @@ class TaskSerializer(serializers.ModelSerializer):
         return task
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(BaseSerializer):
     class Meta:
         model = User
         fields = (
@@ -142,7 +162,7 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
 
-class StaffSerializer(serializers.ModelSerializer):
+class StaffSerializer(BaseSerializer):
     user = UserSerializer()
 
     class Meta:
@@ -168,49 +188,57 @@ class StaffSerializer(serializers.ModelSerializer):
         return staff
 
 
-class StatusGroupSerializer(serializers.ModelSerializer):
+class StatusGroupSerializer(BaseSerializer):
     class Meta:
         model = StatusGroup
         fields = '__all__'
         read_only_fields = ('authority',)
 
 
-class WorkDaySerializer(serializers.ModelSerializer):
+class WorkDaySerializer(BaseSerializer):
     class Meta:
         model = WorkDay
         fields = '__all__'
         read_only_fields = ('authority',)
+        expandable_fields = {
+            'staff': StaffSerializer,
+        }
 
     def get_fields(self):
         fields = super().get_fields()
 
-        authority = self.context['request'].session.get('authority')
+        authority = get_the_authority(self.context['request'].user)
         fields['staff'] = hyperlinkedRelatedFieldByAuthority(Staff, 'staff-detail', authority, False)
         return fields
 
 
-class ScheduledTodoSerializer(serializers.ModelSerializer):
+class ScheduledTodoSerializer(BaseSerializer):
+    # Todo: Rework polymorphic relations using generic serializer or what ever it is
     class Meta:
         model = ScheduledTodo
         fields = '__all__'
         read_only_fields = ('authority',)
+        expandable_fields = {
+            'work_day': WorkDaySerializer,
+            'todo': TodoSerializer,
+        }
 
     def get_fields(self):
         fields = super().get_fields()
 
-        authority = self.context['request'].session.get('authority')
+        authority = get_the_authority(self.context['request'].user)
         fields['work_day'] = hyperlinkedRelatedFieldByAuthority(WorkDay, 'workday-detail', authority, False)
         return fields
 
 
-class StatusSerializer(serializers.ModelSerializer):
+class StatusSerializer(BaseSerializer):
     class Meta:
         model = Status
         fields = '__all__'
         read_only_fields = ('authority',)
 
 
-class CreateUserSerializer(serializers.ModelSerializer):
+class CreateUserSerializer(BaseSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
