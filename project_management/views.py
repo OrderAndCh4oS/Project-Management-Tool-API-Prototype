@@ -70,6 +70,15 @@ class JobViewSet(WithAuthorityBaseViewSet):
         'todo__status__title'
     )
 
+    def get_queryset(self):
+        username = self.request.query_params.get('todo__assigned_to__user__username', None)
+        first_name = self.request.query_params.get('todo__assigned_to__user__first_name', None)
+        last_name = self.request.query_params.get('todo__assigned_to__user__last_name', None)
+        if not (username or first_name or last_name):
+            user = self.request.user
+            return models.Job.objects.filter(todo__assigned_to__user=user)
+        return models.Job.objects.all()
+
 
 class TaskViewSet(WithAuthorityBaseViewSet):
     queryset = models.Task.objects.all()

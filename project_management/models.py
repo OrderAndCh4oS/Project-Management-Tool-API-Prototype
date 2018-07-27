@@ -97,6 +97,7 @@ class Status(models.Model):
 
 class Project(models.Model):
     reference_code = models.CharField(max_length=20)
+    title = models.CharField(max_length=120)
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
     status_group = models.ForeignKey(StatusGroup, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

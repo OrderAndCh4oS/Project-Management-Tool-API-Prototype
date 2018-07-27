@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,12 +23,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '@pck5)*3$1c$dl8&6_rpa7%54v4aoww^xvcabxsyv2us&2wv+8'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['devone.orderandchaoscreative.com', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -39,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'project_management.apps.ProjectManagementConfig',
+    'storages'
 ]
 
 MIDDLEWARE = [
@@ -55,8 +60,9 @@ MIDDLEWARE = [
 CORS_ORIGIN_WHITELIST = (
     'localhost:8000',
     'localhost:8080',
-    '127.0.0.1:8000'
-    '127.0.0.1:8080'
+    '127.0.0.1:8000',
+    '127.0.0.1:8080',
+    'devone.orderandchaoscreative.com'
 )
 
 ROOT_URLCONF = 'pm_tool.urls'
@@ -138,8 +144,28 @@ USE_L10N = True
 
 USE_TZ = True
 
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.0/howto/static-files/
+SECURE_BROWSER_XSS_FILTER = True
 
-STATIC_URL = '/static/'
+# SESSION_COOKIE_SECURE = True
+
+# CSRF_COOKIE_SECURE = True
+
+X_FRAME_OPTIONS = 'DENY'
+
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_LOCATION = 'static'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+STATIC_URL = 'https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
