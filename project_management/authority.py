@@ -10,7 +10,7 @@ def get_the_authority(user):
 
 def has_access(request, object):
     try:
-        return request.session.get('authority') == object.authority.get_uuid()
+        return request.user.staff.authority.get_uuid() == object.authority.get_uuid()
     except:
         return False
 
