@@ -14,6 +14,8 @@ from project_management.models import Authority
 
 
 class WithAuthorityBaseViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
+
     def perform_create(self, serializer):
         authority = Authority.objects.get(uuid=get_the_authority(self.request.user))
         serializer.save(authority=authority)
@@ -22,14 +24,12 @@ class WithAuthorityBaseViewSet(viewsets.ModelViewSet):
 class AddressViewSet(WithAuthorityBaseViewSet):
     queryset = models.Address.objects.all()
     serializer_class = serializers.AddressSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
 class CompanyViewSet(WithAuthorityBaseViewSet):
     queryset = models.Company.objects.all()
     serializer_class = serializers.CompanySerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('name', 'clients__fullname')
     filter_fields = ('clients__fullname',)
@@ -38,7 +38,6 @@ class CompanyViewSet(WithAuthorityBaseViewSet):
 class ClientViewSet(WithAuthorityBaseViewSet):
     queryset = models.Client.objects.all()
     serializer_class = serializers.ClientSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('fullname', 'companies__name', 'email_addresses__email')
     filter_fields = ('companies__name',)
@@ -47,14 +46,12 @@ class ClientViewSet(WithAuthorityBaseViewSet):
 class EmailAddressViewSet(WithAuthorityBaseViewSet):
     queryset = models.EmailAddress.objects.all()
     serializer_class = serializers.EmailAddressSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
 class ProjectViewSet(WithAuthorityBaseViewSet):
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('reference_code', 'company__name')
     filter_fields = ('company__name',)
@@ -63,7 +60,6 @@ class ProjectViewSet(WithAuthorityBaseViewSet):
 class JobViewSet(WithAuthorityBaseViewSet):
     queryset = models.Job.objects.all()
     serializer_class = serializers.JobSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
     filter_fields = (
@@ -95,7 +91,6 @@ class JobViewSet(WithAuthorityBaseViewSet):
 class TaskViewSet(WithAuthorityBaseViewSet):
     queryset = models.Task.objects.all()
     serializer_class = serializers.TaskSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
     filter_fields = (
@@ -117,7 +112,6 @@ class TaskViewSet(WithAuthorityBaseViewSet):
 class StaffViewSet(WithAuthorityBaseViewSet):
     queryset = models.Staff.objects.all()
     serializer_class = serializers.StaffSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, hasObjectAuthorityFilterBackend)
     search_fields = ('user',)
 
@@ -125,7 +119,6 @@ class StaffViewSet(WithAuthorityBaseViewSet):
 class StatusGroupViewSet(WithAuthorityBaseViewSet):
     queryset = models.StatusGroup.objects.all()
     serializer_class = serializers.StatusGroupSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
@@ -133,7 +126,6 @@ class StatusGroupViewSet(WithAuthorityBaseViewSet):
 class WorkDayViewSet(WithAuthorityBaseViewSet):
     queryset = models.WorkDay.objects.all()
     serializer_class = serializers.WorkDaySerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
@@ -141,7 +133,6 @@ class WorkDayViewSet(WithAuthorityBaseViewSet):
 class ScheduledTodoViewSet(WithAuthorityBaseViewSet):
     queryset = models.ScheduledTodo.objects.all()
     serializer_class = serializers.ScheduledTodoSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
     filter_fields = (
         'work_day',
@@ -154,7 +145,6 @@ class ScheduledTodoViewSet(WithAuthorityBaseViewSet):
 class StatusViewSet(WithAuthorityBaseViewSet):
     queryset = models.Status.objects.all()
     serializer_class = serializers.StatusSerializer
-    permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 

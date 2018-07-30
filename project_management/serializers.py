@@ -81,11 +81,19 @@ class CompanySerializer(GroupHyperlinksSerializer, BaseSerializer):
         return fields
 
 
-class EmailAddressSerializer(BaseSerializer):
+class EmailAddressSerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = EmailAddress
         fields = '__all__'
         read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = get_the_authority(self.context['request'].user)
+        fields['client'] = hyperlinkedRelatedFieldByAuthority(Client, 'client-detail', authority, False)
+
+        return fields
 
 
 class ProjectSerializer(GroupHyperlinksSerializer, BaseSerializer):
