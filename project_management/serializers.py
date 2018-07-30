@@ -2,6 +2,7 @@ from datetime import timedelta, date
 
 from expander import ExpanderSerializerMixin
 from rest_framework import serializers
+from rest_framework.relations import Hyperlink
 
 from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority, \
     get_the_authority
@@ -9,16 +10,33 @@ from project_management.models import Staff, StatusGroup, Status, Project, Compa
     User, Authority, ScheduledTodo, WorkDay, Todo, Task, Job
 
 
-def recurse(dictionary):
-    if type(dictionary) == dict:
-        for key in dictionary:
-            recurse(dictionary[key])
+def lift_hyperlinks(dictionary):
+    hyperlinks = {}
+    if isinstance(dictionary, dict):
+        for key, value in list(dictionary.items()):
+            if isinstance(value, Hyperlink):
+                hyperlinks[key] = dictionary.pop(key)
+            elif isinstance(value, list):
+                hyperlinks[key] = [hyperlink for hyperlink in value if isinstance(hyperlink, Hyperlink)]
+                if len(hyperlinks[key]):
+                    del dictionary[key]
+                else:
+                    del hyperlinks[key]
+            else:
+                lift_hyperlinks(dictionary[key])
+        dictionary['hyperlinks'] = hyperlinks
+
+
+class GroupHyperlinksSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        lift_hyperlinks(representation)
+
+        return representation
 
 
 class BaseSerializer(ExpanderSerializerMixin, serializers.ModelSerializer):
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        links = {}
+    pass
 
 
 class AddressSerializer(BaseSerializer):
@@ -43,7 +61,7 @@ class ClientSerializer(BaseSerializer):
         return fields
 
 
-class CompanySerializer(BaseSerializer):
+class CompanySerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = Company
         fields = ('name', 'url', 'clients', 'addresses')
@@ -70,7 +88,7 @@ class EmailAddressSerializer(BaseSerializer):
         read_only_fields = ('authority',)
 
 
-class ProjectSerializer(BaseSerializer):
+class ProjectSerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = Project
         exclude = ('status_group',)
@@ -134,11 +152,19 @@ class StatusGroupSerializer(BaseSerializer):
         read_only_fields = ('authority',)
 
 
-class StatusSerializer(BaseSerializer):
+class StatusSerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = Status
         fields = '__all__'
         read_only_fields = ('authority',)
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        authority = get_the_authority(self.context['request'].user)
+        fields['status_group'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
+
+        return fields
 
 
 class TodoSerializer(BaseSerializer):
@@ -190,7 +216,7 @@ class JobSerializer(BaseSerializer):
         status = representation.pop('status')
         assigned_to = representation.pop('assigned_to')
 
-        representation['links'] = {
+        representation['hyperlinks'] = {
             "project": project,
             "status": status,
             "assigned_to": assigned_to
@@ -247,16 +273,16 @@ class TaskSerializer(BaseSerializer):
         for key in todo_representation:
             representation[key] = todo_representation[key]
 
-        representation['project__title'] = instance.project.title
+        representation['job__title'] = instance.job.todo.title
         representation['status__title'] = instance.todo.status.title
         representation['assigned_to__username'] = instance.todo.assigned_to.user.username
 
-        project = representation.pop('project')
+        job = representation.pop('job')
         status = representation.pop('status')
         assigned_to = representation.pop('assigned_to')
 
-        representation['links'] = {
-            "project": project,
+        representation['hyperlinks'] = {
+            "job": job,
             "status": status,
             "assigned_to": assigned_to
         }
@@ -275,7 +301,7 @@ class TaskSerializer(BaseSerializer):
         return task
 
 
-class WorkDaySerializer(BaseSerializer):
+class WorkDaySerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = WorkDay
         fields = '__all__'
@@ -292,7 +318,7 @@ class WorkDaySerializer(BaseSerializer):
         return fields
 
 
-class ScheduledTodoSerializer(BaseSerializer):
+class ScheduledTodoSerializer(GroupHyperlinksSerializer, BaseSerializer):
     # Todo: Rework polymorphic relations using generic serializer or what ever it is
     class Meta:
         model = ScheduledTodo

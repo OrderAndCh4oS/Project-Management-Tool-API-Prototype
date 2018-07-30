@@ -1,6 +1,8 @@
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, mixins, filters
+from rest_framework import viewsets, mixins, filters, status
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from project_management import models
@@ -79,21 +81,37 @@ class JobViewSet(WithAuthorityBaseViewSet):
             return models.Job.objects.filter(todo__assigned_to__user=user)
         return models.Job.objects.all()
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance.todo)
+            self.perform_destroy(instance)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 
 class TaskViewSet(WithAuthorityBaseViewSet):
     queryset = models.Task.objects.all()
     serializer_class = serializers.TaskSerializer
     permission_classes = (permissions.IsProjectManagerOrIsStaffReadOnly,)
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
-    # search_fields = (
-    #     'todo__reference_code', 'todo__title', 'todo__description',
-    #     'job__todo__reference_code', 'job__todo__title', 'job__todo__description'
-    # )
-    # filter_fields = (
-    #     'todo__project__reference_code', 'todo__assigned_to__user__username',
-    #     'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
-    #     'todo__status__title'
-    # )
+    search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
+    filter_fields = (
+        'todo__assigned_to__user__username',
+        'todo__assigned_to__user__first_name', 'todo__assigned_to__user__last_name',
+        'todo__status__title'
+    )
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance.todo)
+            self.perform_destroy(instance)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class StaffViewSet(WithAuthorityBaseViewSet):
