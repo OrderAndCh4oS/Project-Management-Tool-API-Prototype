@@ -113,6 +113,13 @@ class ProjectSerializer(GroupHyperlinksSerializer, BaseSerializer):
 
         return fields
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if self.context['request'].method == 'POST':
+            representation['company'] = {'name': instance.company.name}
+
+        return representation
+
 
 class UserSerializer(BaseSerializer):
     class Meta:

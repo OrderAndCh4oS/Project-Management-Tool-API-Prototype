@@ -30,6 +30,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['devone.orderandchaoscreative.com', 'localhost', '127.0.0.1']
 
+APPEND_SLASH = False
+
 # Application definition
 
 INSTALLED_APPS = [

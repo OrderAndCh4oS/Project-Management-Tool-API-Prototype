@@ -38,7 +38,8 @@ class CompanyViewSet(WithAuthorityBaseViewSet):
 class ClientViewSet(WithAuthorityBaseViewSet):
     queryset = models.Client.objects.all()
     serializer_class = serializers.ClientSerializer
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
+    filter_backends = (
+        filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('fullname', 'companies__name', 'email_addresses__email')
     filter_fields = ('companies__name',)
 
@@ -52,7 +53,8 @@ class EmailAddressViewSet(WithAuthorityBaseViewSet):
 class ProjectViewSet(WithAuthorityBaseViewSet):
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
+    filter_backends = (
+        filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('reference_code', 'company__name')
     filter_fields = ('company__name',)
 
@@ -60,7 +62,8 @@ class ProjectViewSet(WithAuthorityBaseViewSet):
 class JobViewSet(WithAuthorityBaseViewSet):
     queryset = models.Job.objects.all()
     serializer_class = serializers.JobSerializer
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
+    filter_backends = (
+        filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
     filter_fields = (
         'todo__assigned_to__user__username',
@@ -87,11 +90,11 @@ class JobViewSet(WithAuthorityBaseViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
 class TaskViewSet(WithAuthorityBaseViewSet):
     queryset = models.Task.objects.all()
     serializer_class = serializers.TaskSerializer
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
+    filter_backends = (
+        filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('todo__reference_code', 'todo__title', 'todo__description')
     filter_fields = (
         'todo__assigned_to__user__username',
@@ -112,7 +115,7 @@ class TaskViewSet(WithAuthorityBaseViewSet):
 class StaffViewSet(WithAuthorityBaseViewSet):
     queryset = models.Staff.objects.all()
     serializer_class = serializers.StaffSerializer
-    filter_backends = (filters.SearchFilter, hasObjectAuthorityFilterBackend)
+    filter_backends = (filters.OrderingFilter, filters.SearchFilter, hasObjectAuthorityFilterBackend)
     search_fields = ('user',)
 
 
@@ -133,7 +136,7 @@ class WorkDayViewSet(WithAuthorityBaseViewSet):
 class ScheduledTodoViewSet(WithAuthorityBaseViewSet):
     queryset = models.ScheduledTodo.objects.all()
     serializer_class = serializers.ScheduledTodoSerializer
-    filter_backends = (hasObjectAuthorityFilterBackend,)
+    filter_backends = (filters.OrderingFilter, hasObjectAuthorityFilterBackend,)
     filter_fields = (
         'work_day',
         'todo__project__reference_code', 'todo__assigned_to__user__username',
