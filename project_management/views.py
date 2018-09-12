@@ -27,12 +27,25 @@ class AddressViewSet(WithAuthorityBaseViewSet):
     filter_backends = (hasObjectAuthorityFilterBackend,)
 
 
+class AddressFormViewSet(WithAuthorityBaseViewSet):
+    queryset = models.Address.objects.all()
+    serializer_class = serializers.AddressFormSerializer
+    filter_backends = (hasObjectAuthorityFilterBackend,)
+
+
 class CompanyViewSet(WithAuthorityBaseViewSet):
     queryset = models.Company.objects.all()
     serializer_class = serializers.CompanySerializer
     filter_backends = (filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('name', 'clients__fullname')
     filter_fields = ('clients__fullname',)
+
+
+class CompanyFormViewSet(WithAuthorityBaseViewSet):
+    queryset = models.Company.objects.all()
+    serializer_class = serializers.CompanyFormSerializer
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter, hasObjectAuthorityFilterBackend)
+    search_fields = ('name',)
 
 
 class ClientViewSet(WithAuthorityBaseViewSet):
@@ -42,6 +55,13 @@ class ClientViewSet(WithAuthorityBaseViewSet):
         filters.OrderingFilter, filters.SearchFilter, DjangoFilterBackend, hasObjectAuthorityFilterBackend)
     search_fields = ('fullname', 'companies__name', 'email_addresses__email')
     filter_fields = ('companies__name',)
+
+
+class ClientFormViewSet(WithAuthorityBaseViewSet):
+    queryset = models.Client.objects.all()
+    serializer_class = serializers.ClientFormSerializer
+    filter_backends = (filters.OrderingFilter, filters.SearchFilter, hasObjectAuthorityFilterBackend)
+    search_fields = ('fullname', 'email_addresses__email')
 
 
 class EmailAddressViewSet(WithAuthorityBaseViewSet):

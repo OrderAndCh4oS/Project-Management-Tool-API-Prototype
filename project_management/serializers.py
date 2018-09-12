@@ -2,6 +2,7 @@ from datetime import timedelta, date
 
 from expander import ExpanderSerializerMixin
 from rest_framework import serializers
+from rest_framework.fields import UUIDField
 from rest_framework.relations import Hyperlink
 
 from project_management.authority import hyperlinkedRelatedFieldByAuthority, slugRelatedFieldByAuthority, \
@@ -35,22 +36,26 @@ class GroupHyperlinksSerializer(serializers.Serializer):
         return representation
 
 
-class BaseSerializer(ExpanderSerializerMixin, serializers.ModelSerializer):
+class BaseSerializer(ExpanderSerializerMixin, serializers.HyperlinkedModelSerializer):
     pass
 
 
 class AddressSerializer(BaseSerializer):
     class Meta:
         model = Address
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
+
+
+class AddressFormSerializer(BaseSerializer):
+    class Meta:
+        model = Address
+        fields = ('address_first_line', 'city', 'url')
 
 
 class ClientSerializer(BaseSerializer):
     class Meta:
         model = Client
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -61,11 +66,16 @@ class ClientSerializer(BaseSerializer):
         return fields
 
 
+class ClientFormSerializer(BaseSerializer):
+    class Meta:
+        model = Client
+        fields = ('fullname', 'url')
+
+
 class CompanySerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = Company
-        fields = ('name', 'url', 'clients', 'addresses')
-        read_only_fields = ('authority',)
+        fields = ('uuid', 'url', 'name', 'website', 'clients', 'addresses')
         expandable_fields = {
             'clients': (ClientSerializer, (), {'many': True}),
             'addresses': (AddressSerializer, (), {'many': True})
@@ -81,11 +91,18 @@ class CompanySerializer(GroupHyperlinksSerializer, BaseSerializer):
         return fields
 
 
-class EmailAddressSerializer(GroupHyperlinksSerializer, BaseSerializer):
+class CompanyFormSerializer(BaseSerializer):
+    class Meta:
+        model = Company
+        fields = ('name', 'url')
+
+
+class EmailAddressSerializer(BaseSerializer):
+    url = serializers.HyperlinkedRelatedField(view_name='email_address-detail', read_only=True)
+
     class Meta:
         model = EmailAddress
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -97,10 +114,11 @@ class EmailAddressSerializer(GroupHyperlinksSerializer, BaseSerializer):
 
 
 class ProjectSerializer(GroupHyperlinksSerializer, BaseSerializer):
+    uuid = UUIDField(read_only=True)
+
     class Meta:
         model = Project
-        exclude = ('status_group',)
-        read_only_fields = ('authority',)
+        exclude = ('status_group', 'authority')
         expandable_fields = {
             'company': CompanySerializer,
         }
@@ -139,8 +157,7 @@ class StaffSerializer(BaseSerializer):
 
     class Meta:
         model = Staff
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
 
     def to_representation(self, obj):
         representation = super().to_representation(obj)
@@ -163,30 +180,29 @@ class StaffSerializer(BaseSerializer):
 class StatusGroupSerializer(BaseSerializer):
     class Meta:
         model = StatusGroup
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
 
 
 class StatusSerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = Status
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
 
     def get_fields(self):
         fields = super().get_fields()
 
         authority = get_the_authority(self.context['request'].user)
-        fields['status_group'] = hyperlinkedRelatedFieldByAuthority(Project, 'project-detail', authority, False)
+        fields['status_group'] = hyperlinkedRelatedFieldByAuthority(StatusGroup, 'statusgroup-detail', authority, False)
 
         return fields
 
 
 class TodoSerializer(BaseSerializer):
+    uuid = UUIDField(read_only=True)
+
     class Meta:
         model = Todo
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority', 'url')
 
     def get_fields(self):
         fields = super().get_fields()
@@ -203,8 +219,7 @@ class JobSerializer(BaseSerializer):
 
     class Meta:
         model = Job
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
         expandable_fields = {
             'project': ProjectSerializer,
         }
@@ -239,16 +254,6 @@ class JobSerializer(BaseSerializer):
 
         return representation
 
-    def to_internal_value(self, data):
-        todo_internal = {}
-        for key in TodoSerializer.Meta.fields:
-            if key in data:
-                todo_internal[key] = data.pop(key)
-
-        internal = super().to_internal_value(data)
-        internal['todo'] = todo_internal
-        return internal
-
     def update(self, instance, validated_data):
         todo_data = validated_data.pop('todo')
         super().update(instance, validated_data)
@@ -276,8 +281,7 @@ class TaskSerializer(BaseSerializer):
 
     class Meta:
         model = Task
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
         expandable_fields = {
             'job': JobSerializer,
         }
@@ -319,8 +323,7 @@ class TaskSerializer(BaseSerializer):
 class WorkDaySerializer(GroupHyperlinksSerializer, BaseSerializer):
     class Meta:
         model = WorkDay
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
         expandable_fields = {
             'staff': StaffSerializer,
         }
@@ -337,8 +340,7 @@ class ScheduledTodoSerializer(GroupHyperlinksSerializer, BaseSerializer):
     # Todo: Rework polymorphic relations using generic serializer or what ever it is
     class Meta:
         model = ScheduledTodo
-        fields = '__all__'
-        read_only_fields = ('authority',)
+        exclude = ('authority',)
         expandable_fields = {
             'work_day': WorkDaySerializer,
             'todo': TodoSerializer,

@@ -11,8 +11,17 @@ class User(AbstractUser):
     )
 
 
-class Authority(models.Model):
+class UUIDModel(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    class Meta:
+        abstract = True
+
+    def get_uuid(self):
+        return self.uuid.__str__()
+
+
+class Authority(UUIDModel):
     expires_at = models.DateField()
     is_active = models.BooleanField()
 
@@ -23,7 +32,15 @@ class Authority(models.Model):
         return self.uuid.__str__()
 
 
-class Address(models.Model):
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class Address(BaseModel, UUIDModel):
     class Meta:
         verbose_name_plural = "Addresses"
 
@@ -39,16 +56,15 @@ class Address(models.Model):
         return self.address_first_line
 
 
-class Client(models.Model):
+class Client(BaseModel, UUIDModel):
     fullname = models.CharField(max_length=80)
-    created_at = models.DateTimeField(auto_now_add=True)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return self.fullname
 
 
-class EmailAddress(models.Model):
+class EmailAddress(BaseModel, UUIDModel):
     class Meta:
         verbose_name_plural = "Email Addresses"
 
@@ -60,22 +76,21 @@ class EmailAddress(models.Model):
         return self.email
 
 
-class Company(models.Model):
+class Company(BaseModel, UUIDModel):
     class Meta:
         verbose_name_plural = "Companies"
 
     name = models.CharField(max_length=255)
     addresses = models.ManyToManyField(Address, related_name='addresses')
     clients = models.ManyToManyField(Client, related_name="companies")
-    url = models.CharField(max_length=120)
-    created_at = models.DateTimeField(auto_now_add=True)
+    website = models.CharField(max_length=120)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return self.name
 
 
-class StatusGroup(models.Model):
+class StatusGroup(BaseModel, UUIDModel):
     title = models.CharField(max_length=30)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, editable=False)
 
@@ -83,7 +98,7 @@ class StatusGroup(models.Model):
         return self.title
 
 
-class Status(models.Model):
+class Status(BaseModel, UUIDModel):
     class Meta:
         verbose_name_plural = "Statuses"
 
@@ -95,19 +110,18 @@ class Status(models.Model):
         return self.title
 
 
-class Project(models.Model):
+class Project(BaseModel, UUIDModel):
     reference_code = models.CharField(max_length=20)
     title = models.CharField(max_length=120)
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
     status_group = models.ForeignKey(StatusGroup, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return self.reference_code
 
 
-class Staff(models.Model):
+class Staff(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     rate = models.FloatField(default=0)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, null=True, blank=True)
@@ -119,15 +133,13 @@ class Staff(models.Model):
         return self.user.username
 
 
-class Todo(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Todo(BaseModel, UUIDModel):
     reference_code = models.CharField(max_length=20)
     title = models.CharField(max_length=140)
     description = models.CharField(max_length=255)
     estimated_time = models.FloatField(default=0)
     logged_time = models.FloatField(default=0)
     assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True, to_field='user')
-    created_at = models.DateTimeField(auto_now_add=True)
     deadline = models.DateTimeField(null=True)
     status = models.ForeignKey(Status, on_delete=models.SET_NULL, null=True, blank=True)
     authority = models.ForeignKey(Authority, on_delete=models.CASCADE, editable=False)
@@ -154,7 +166,7 @@ class Task(models.Model):
         return str(self.todo)
 
 
-class WorkDay(models.Model):
+class WorkDay(BaseModel, UUIDModel):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
     date = models.DateField()
     hours = models.FloatField()
